@@ -7,8 +7,8 @@ var BinaryTree = function(identifier)
   {
     var node = this;
     node.parent = null
-    node.leftchild = null;
-    node.rightchild = null;
+    node.left = null;
+    node.right = null;
     node.content = content;
 
     if(node.content !== null && typeof node.content.BNodeMap === 'undefined')
@@ -21,6 +21,10 @@ var BinaryTree = function(identifier)
       });
     }
   };
+  BNode.prototype.isALeaf = function() { if(this.left == null && this.right == null) return true; else return false; };
+  BNode.prototype.isAHead = function() { if(this.parent == null) return true; else return false; };
+  BNode.prototype.isLeftChild = function() { if(this.parent.left == this) return true; else if(this.parent.right == this) return false; };
+  BNode.prototype.numChildren = function() { var num = 0; if(this.left != null) num++; if(this.right != null) num++; return num; };
 
   this.head = null;
 
@@ -40,8 +44,7 @@ var BinaryTree = function(identifier)
     return head;
   };
 
-  //SHOULDN'T BE CALLED FROM ANYWHERE BUT WITHIN A TREE!! (only public so other trees can call it... )
-  self.insertNode = function(node)
+  var insertNode = function(node)
   {
     var parentNode = null;
     var tmpNode = head;
@@ -75,207 +78,48 @@ var BinaryTree = function(identifier)
     node.content.BNodeMap[self.identifier] = node;
   };
 
-  //SHOULDN'T BE CALLED FROM ANYWHERE BUT WITHIN A TREE!! (only public so other trees can call it... )
-  self.removeNode = function(node)
+  var moveContentToNode = function(fromNode, toNode) //overwrites toNode's content
   {
-    var newSelf = findGreatestChildNode(node.left);
-    if(node.parent)
+    toNode.content = fromNode.content;
+    toNode.content.BNodeMap[self.identifier] = toNode;
+    fromNode.content = null;
+  };
+
+  var removeNode = function(node) //turned out that a potentially recursive algorithm was just o(1)...? did I do something wrong?
+  {
+    delete node.content.BNodeMap[self.identifier];
+
+    if(node.numChildren == 2)
     {
-      var isLeft = false;
-      if(node.parent.left == node)
-        isLeft = true;
-      else if(node.parent.right == node)
-        isLeft = false;
+      var newNodeToDelete = findGreatestChildNode(node.left);
+      moveContentToNode(newNodeToDelete, node);
+      node = newNodeToDelete;
     }
-    node.prev.next = node.next;
-    node.next.prev = node.prev;
-    node.next = null;
-    node.prev = null;
-  
-    if(node.content !== null)
-    {
-      delete node.content.RNodeMap[self.identifier];
-    }
+
+    var child = null;
+    if(node.left != null) 
+      child = node.left;
+    else if(node.right != null)
+      child = node.right;
+
+    if(node.isLeftChild()) 
+      node.parent.left = child;
+    else
+      node.parent.right = child;
+
+    if(child)
+      child.parent = node.parent;
   
     return node;
   };
 
-  self.register = function(content)
+  self.add = function(content)
   {
-    self.insertNodeAfter(new RNode(content), self.head);
+    self.insertNode(new RNode(content));
   };
   
-  self.unregister = function(content)
+  self.remove = function(content)
   {
     self.removeNode(content.RNodeMap[self.identifier]);
-  };
-  
-  self.moveMemberToList = function(content, list)
-  {
-    list.insertNodeAfter(self.removeNode(content.RNodeMap[self.identifier]), list.head);
-  };
-  
-  self.performMemberFunction = function(func, args)
-  {
-    var node = self.head;
-    while(node.next != null)
-    {
-      node = node.next;
-      if(node.prev.content !== null)
-        node.prev.content[func](args);
-    }
-  };
-
-  self.performOnMembers = function(func, args)
-  {
-    var node = self.head;
-    while(node.next != null)
-    {
-      node = node.next;
-      if(node.prev.content !== null)
-        func(node.prev.content, args);
-    }
-  };
-
-  self.firstMember = function()
-  {
-    return self.head.next.content;
-  };
-
-  self.empty = function()
-  {
-    var m;
-    while(m = self.firstMember())
-      self.unregister(m);
-  };
-};
-  
-RegistrationList.prototype.toString = function()
-{
-  var str = "";
-  var node = this.head;
-  var i = 0;
-  while(node.next != null)
-  {
-    node = node.next;
-    if(node.content !== null)
-      str += node.content.toString()+",";
-  }
-  return str;
-};
-
-var PrioritizedRegistrationList = function(identifier, priorities)
-{
-  var self = this;
-  this.identifier = identifier;
-  this.priorities = [];
-  for(var i = 0; i < priorities; i++)
-    this.priorities[i] = new RegistrationList(identifier+"_PRIORITY_"+i);
-
-  self.register = function(content, priority)
-  {
-    this.priorities[priority].register(content);
-  };
-  
-  self.unregister = function(content, priority)
-  {
-    this.priorities[priority].unregister(content);
-  };
-  
-  self.moveMemberToList = function(content, priority, list)
-  {
-    this.priorities[priority].moveMemberToList(content, list);
-  };
-
-  self.moveMemberToPrioritizedList = function(content, priority, list, priority)
-  {
-    this.priorities[priority].unregister(content);
-    list.register(content, priority);
-    //That's the fastest way I can think to do this one, unfortunately... :(
-  };
-  
-  self.performMemberFunction = function(func, args)
-  {
-    for(var i = 0; i < this.priorities.length; i++)
-      this.priorities[i].performMemberFunction(func, args);
-  };
-  
-  self.performOnMembers = function(func, args)
-  {
-    for(var i = 0; i < this.priorities.length; i++)
-      this.priorities[i].performOnMembers(func, args);
-  };
-
-  self.firstMember = function(priority)
-  {
-    return this.priorities[i].firstMember();
-  };
-
-  self.empty = function()
-  {
-    for(var i = 0; i < this.priorities.length; i++)
-      this.priorities[i].empty();
-  };
-};
-  
-PrioritizedRegistrationList.prototype.toString = function()
-{
-  var str = "";
-  for(var i = 0; i < this.priorities.length; i++)
-    str += this.priorities[i].toString()+",";
-  return str;
-};
-
-var RecycleRegistrationList = function(identifier, generateFunc, refreshFunc)
-{
-  var self = this;
-  this.identifier = identifier;
-  var active = new RegistrationList("RECYCLE_"+identifier+"_ACTIVE");
-  var inactive = new RegistrationList("RECYCLE_"+identifier+"_INACTIVE");
-
-  self.generate = generateFunc;
-  self.refresh = refreshFunc;
-
-  self.get = function()
-  {
-    var m;
-    if(m = inactive.firstMember())
-      inactive.unregister(m);
-    else
-      m = self.generate();
-    self.refresh(m);
-    return m;
-  };
-
-  self.add = function(m)
-  {
-    active.register(m);
-  }
-  
-  self.retire = function(m)
-  {
-    active.moveMemberToList(m, inactive);
-  }
-  
-  self.performMemberFunction = function(func, args)
-  {
-    active.performMemberFunction(func, args);
-  };
-
-  self.performOnMembers = function(func, args)
-  {
-    active.performOnMembers(func, args);
-  };
-
-  self.firstMember = function()
-  {
-    return active.firstMember();
-  };
-
-  self.empty = function()
-  {
-    var m;
-    while(m = self.firstMember())
-      self.retire(m);
   };
 };
