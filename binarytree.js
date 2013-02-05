@@ -122,4 +122,30 @@ var BinaryTree = function(identifier)
   {
     self.removeNode(content.RNodeMap[self.identifier]);
   };
+
+  self.popBiggest = function()
+  {
+    return self.removeNode(self.findGreatestChildNode(head)).content;
+  };
+
+  self.popSmallest = function()
+  {
+    return self.removeNode(self.findLeastChildNode(head)).content;
+  };
+
+  //recursive. sorry.
+  var appendChildrenAndSelfContentToOrderedList(node, list)
+  {
+    if(!node) return;
+    appendChildrenAndSelfToOrderedList(node.left, list);
+    list[list.length] = node.content;
+    appendChildrenAndSelfToOrderedList(node.right, list);
+  };
+
+  self.getOrderedList = function()
+  {
+    var list = [];
+    appendChildrenAndSelfContentToOrderedList(head, list);
+    return list;
+  };
 };
