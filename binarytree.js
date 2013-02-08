@@ -26,10 +26,11 @@ var BinaryTree = function(identifier)
   BNode.prototype.isLeftChild = function() { if(this.parent.left == this) return true; else if(this.parent.right == this) return false; };
   BNode.prototype.numChildren = function() { var num = 0; if(this.left != null) num++; if(this.right != null) num++; return num; };
 
-  this.head = null;
+  self.head = null;
 
   var findGreatestChildNode = function(head)
   {
+    if(!head) return null;
     var tmp;
     while(tmp = head.right)
       head = tmp;
@@ -38,6 +39,7 @@ var BinaryTree = function(identifier)
 
   var findLeastChildNode = function(head)
   {
+    if(!head) return null;
     var tmp;
     while(tmp = head.left)
       head = tmp;
@@ -46,33 +48,41 @@ var BinaryTree = function(identifier)
 
   var insertNode = function(node)
   {
+    if(!self.head) //I hate doing things like this...
+    {
+      self.head = node;
+      return;
+    }
+
     var parentNode = null;
-    var tmpNode = head;
-    var evaluation = node.evaluate();
+    var tmpNode = self.head;
+    var evaluation = node.content.evaluate();
     var tmpEvaluation = 0;
     var lastCheckWasLeft = false;
     //Non-recursive tree traversal
     while(tmpNode)
     {
-      if(tmpNode) tmpEvaluation = tmpNode.evaluate();
+      if(tmpNode) tmpEvaluation = tmpNode.content.evaluate();
       while(tmpNode && evaluation < tmpEvaluation)
       {
         parentNode = tmpNode;
         tmpNode = parentNode.left;
+        if(tmpNode) tmpEvaluation = tmpNode.content.evaluate();
         lastCheckWasLeft = true;
       }
-      if(tmpNode) tmpEvaluation = tmpNode.evaluate();
+      if(tmpNode) tmpEvaluation = tmpNode.content.evaluate();
       while(tmpNode && evaluation >= tmpEvaluation)
       {
         parentNode = tmpNode;
         tmpNode = parentNode.right;
+        if(tmpNode) tmpEvaluation = tmpNode.content.evaluate();
         lastCheckWasLeft = false;
       }
     }
     node.parent = parentNode;
     if(parentNode && lastCheckWasLeft)
       parentNode.left = node;
-    if(parentNode && lastCheckWasRight)
+    if(parentNode && !lastCheckWasLeft)
         parentNode.right = node;
 
     node.content.BNodeMap[self.identifier] = node;
@@ -102,50 +112,62 @@ var BinaryTree = function(identifier)
     else if(node.right != null)
       child = node.right;
 
-    if(node.isLeftChild()) 
-      node.parent.left = child;
-    else
-      node.parent.right = child;
+    if(node.parent)
+    {
+      if(node.isLeftChild()) 
+        node.parent.left = child;
+      else
+        node.parent.right = child;
+    }
 
     if(child)
       child.parent = node.parent;
+      
+    if(!node.parent)
+      self.head = child;
   
     return node;
   };
 
   self.add = function(content)
   {
-    self.insertNode(new RNode(content));
+    insertNode(new BNode(content));
   };
   
   self.remove = function(content)
   {
-    self.removeNode(content.RNodeMap[self.identifier]);
+    removeNode(content.BNodeMap[self.identifier]);
   };
 
   self.popBiggest = function()
   {
-    return self.removeNode(self.findGreatestChildNode(head)).content;
+    var n;
+    if(n = findGreatestChildNode(self.head))
+      return removeNode(n).content;
+    return null;
   };
 
   self.popSmallest = function()
   {
-    return self.removeNode(self.findLeastChildNode(head)).content;
+    var n;
+    if(n = findLeastChildNode(self.head))
+      return removeNode(n).content;
+    return null;
   };
 
   //recursive. sorry.
-  var appendChildrenAndSelfContentToOrderedList(node, list)
+  var appendChildrenAndSelfContentToOrderedList = function(node, list)
   {
     if(!node) return;
-    appendChildrenAndSelfToOrderedList(node.left, list);
+    appendChildrenAndSelfContentToOrderedList(node.left, list);
     list[list.length] = node.content;
-    appendChildrenAndSelfToOrderedList(node.right, list);
+    appendChildrenAndSelfContentToOrderedList(node.right, list);
   };
 
   self.getOrderedList = function()
   {
     var list = [];
-    appendChildrenAndSelfContentToOrderedList(head, list);
+    appendChildrenAndSelfContentToOrderedList(self.head, list);
     return list;
   };
 };

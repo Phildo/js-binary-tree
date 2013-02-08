@@ -1,0 +1,34 @@
+<html>
+<head>
+</head>
+<body>
+<script type="text/javascript" src="binarytree.js"></script>
+<script type="text/javascript">
+  var b = new BinaryTree("Bananaz");
+  var obs = [];
+  var n = 10;
+  for(var i = 0; i < n; i++)
+    obs[obs.length] = {"val":i,"evaluate":function(){ return this.val; }};
+  var vals = [];
+  for(var i = 0; i < n; i++)
+    vals[i] = i;
+    
+  //Add in order
+  //for(var i = 0; i < n; i++)
+    //b.add(obs[i]);
+    
+  //Add out of order
+  while(vals.length > 0)
+  {
+    var i = Math.floor(Math.random()*vals.length);
+    b.add(obs[vals[i]]);
+    vals.splice(i,1);
+  }
+  
+  var l = b.getOrderedList();
+  for(var i = 0; i < n; i++)
+    alert(l[i].val);
+
+</script>
+</body>
+</html>
