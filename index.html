@@ -1,12 +1,14 @@
 <html>
 <head>
 </head>
-<body>
 <script type="text/javascript" src="binarytree.js"></script>
+<body>
+<div id='out'></div>
+</body>
 <script type="text/javascript">
   var b = new BinaryTree("Bananaz");
   var obs = [];
-  var n = 10;
+  var n = 1000;
   for(var i = 0; i < n; i++)
     obs[obs.length] = {"val":i,"evaluate":function(){ return this.val; }};
   var vals = [];
@@ -25,10 +27,17 @@
     vals.splice(i,1);
   }
   
+  //ordered list output
+  /*
   var l = b.getOrderedList();
   for(var i = 0; i < n; i++)
-    alert(l[i].val);
-
+    document.getElementById('out').innerHTML += l[i].val + "<br />";
+  */
+    
+  //direct output
+  var v;
+  while(v = b.popSmallest())
+    document.getElementById('out').innerHTML += v.val + "<br />";
+  
 </script>
-</body>
 </html>
